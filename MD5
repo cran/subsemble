@@ -1,10 +1,10 @@
-125dcf1a5907f627c56239f6e10eada5 *DESCRIPTION
+82cf85192a7d812e28661315a87ac81f *DESCRIPTION
 a457a7cc0821b7514d24461b1a00bbd4 *NAMESPACE
-81da71e4167a0b1b0ea840809b3db0ba *NEWS
+1e2065473b76243840bad849a430d7fa *NEWS
 39eb7affad3f11598a357bc268d66046 *R/control.R
 0135edbb5cf4dbc1ea4714668925e8c5 *R/predict.subsemble.R
-eb7465c1b54661b7af5a993d99dbd4a6 *R/subsemble.R
+8a4e9609a44fedf03d7b4988c53efc57 *R/subsemble.R
 d2922654c29c5987fad53ed0a1b298b7 *R/zzz.R
 d2ee2f579b059f24be79eda8230d6459 *man/predict.subsemble.Rd
-82ee2213f45ae8416a01ed0c1ec2a7a3 *man/subsemble-package.Rd
-4c607f76efbf913258bc1ec4b8f3d27c *man/subsemble.Rd
+a71da32379e6e264f89e267068241550 *man/subsemble-package.Rd
+7788b7e572a0277e5e7d06afa4b121ed *man/subsemble.Rd

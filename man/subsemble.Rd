@@ -64,13 +64,13 @@ A character string specifying optional parallelization.  Use \code{"seq"} for se
 \value{
 
 \item{subfits}{
-A list of predictive models, each of which are fit on a subset of the data, \code{x}.  The length of this list is equal to the number of subsets.  The type of model is specified using the \code{learner} argument.
+A list of predictive models, each of which are fit on a subset of the (rows of) data, \code{x}.  For \code{learnControl$multiType="crossprod"}, the length of this list is equal to the number of subsets times the number of learners in the \code{learner} argument.  For \code{learnControl$multiType="divisor"}, the length of this list is equal to the number of subsets.
 }
 \item{metafit}{
 The predictive model which is learned by regressing \code{y} on \code{Z} (see description of \code{Z} below).  The type of model is specified using the \code{metalearner} argument.
 }
 \item{subpred}{
-A data.frame with the predicted values from each sublearner algorithm for the rows in \code{newX}.  If we have L unique learners and there are J subsets of data, then there will be L x J columns when \code{learnControl$multiType=="crossprod"} (default) and J columns when \code{learnControl$multiType=="divisor"}.
+A data.frame with the predicted values from each sublearner algorithm for the rows in \code{newx}.  If we have L unique learners and there are J subsets of data, then there will be L x J columns when \code{learnControl$multiType=="crossprod"} (default) and J columns when \code{learnControl$multiType=="divisor"}.
 }
 \item{pred}{
 A vector containing the predicted values from the subsemble for the rows in \code{newX}.
@@ -112,7 +112,7 @@ An list of runtimes for various steps of the algorithm.  The list contains \code
 }
 
 \references{
-Stephanie Sapp, Mark J. van der Laan & John Canny, Journal of Applied Statistics (2013). Subsemble: an ensemble method for combining subset-specific algorithm fits\cr
+Stephanie Sapp, Mark J. van der Laan & John Canny, Journal of Applied Statistics (2013). Subsemble: An ensemble method for combining subset-specific algorithm fits\cr
 \url{http://www.tandfonline.com/doi/abs/10.1080/02664763.2013.864263}\cr
 \url{https://biostats.bepress.com/ucbbiostat/paper313}
 }

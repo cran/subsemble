@@ -100,6 +100,10 @@ subsemble <- function(x, y, newx = NULL, family = gaussian(),
     } else if (!inherits(parallel, "cluster")) {
         stop("'parallel' must be either 'seq' or 'multicore' or a snow cluster object")
     }
+    if (parallel!="seq"){
+        require(parallel)
+        ncores <- detectCores()
+    }
     
             
     # For each J subset, assign indices to CV folds, such that each fold contains ~N/J points
@@ -133,8 +137,8 @@ subsemble <- function(x, y, newx = NULL, family = gaussian(),
     }            
     # Return a list of length J containing the j^th predictions for fold v 
     # Operates on a single learner
-    .cvFun <- function(v, subCVsets, y, x, family, learner, obsWeights, seed) {
-        preds <- lapply(X=1:J, FUN=.subFun, v=v, subCVsets=subCVsets, y=y, x=x, family=family,
+    .cvFun <- function(v, subCVsets, y, xmat, family, learner, obsWeights, seed) {
+        preds <- lapply(X=1:J, FUN=.subFun, v=v, subCVsets=subCVsets, y=y, x=xmat, family=family,
                       learner=learner, obsWeights=obsWeights, seed=seed)
         return(preds)
     }
@@ -148,17 +152,15 @@ subsemble <- function(x, y, newx = NULL, family = gaussian(),
     .make_Z_l <- function(V, subCVsets, y, x, family, learner, obsWeights, parallel, seed) {
       if (inherits(parallel, "cluster")) {
         #If the parallel object is a snow cluster
-        require(parallel)
-        cvRes <- parSapply(cl=parallel, X=1:V, FUN=.cvFun, subCVsets=subCVsets, y=y, x=x, family=family,
+        cvRes <- parSapply(cl=parallel, X=1:V, FUN=.cvFun, subCVsets=subCVsets, y=y, xmat=x, family=family,
                            learner=learner, obsWeights=obsWeights, seed=seed)  #cvRes is a J x V matrix         
       } else if (parallel=="multicore") {
-        require(parallel)
-        cl <- makeCluster(detectCores(), type="FORK")  #May update in future to avoid copying all objects in memory
-        cvRes <- parSapply(cl=cl, X=1:V, FUN=.cvFun, subCVsets=subCVsets, y=y, x=x, family=family,
+        cl <- makeCluster(min(ncores,V), type="FORK")  #May update in future to avoid copying all objects in memory
+        cvRes <- parSapply(cl=cl, X=1:V, FUN=.cvFun, subCVsets=subCVsets, y=y, xmat=x, family=family,
                            learner=learner, obsWeights=obsWeights, seed=seed)  #cvRes is a J x V matrix
         stopCluster(cl)
       } else {
-        cvRes <- sapply(X=1:V, FUN=.cvFun, subCVsets=subCVsets, y=y, x=x, family=family,
+        cvRes <- sapply(X=1:V, FUN=.cvFun, subCVsets=subCVsets, y=y, xmat=x, family=family,
                         learner=learner, obsWeights=obsWeights, seed=seed)  #cvRes is a J x V matrix
       }
       if (class(cvRes)!="matrix") {
@@ -233,8 +235,8 @@ subsemble <- function(x, y, newx = NULL, family = gaussian(),
         return(fit)
     }
     # Wrapper function for .fitFun to record system.time
-    .fitWrapper <- function(m, subCVsets, y, x, newx, family, learner, obsWeights, seed) {
-      fittime <- system.time(fit <- .fitFun(m, subCVsets, y, x, newx, family, 
+    .fitWrapper <- function(m, subCVsets, y, xmat, newx, family, learner, obsWeights, seed) {
+      fittime <- system.time(fit <- .fitFun(m, subCVsets, y, xmat, newx, family, 
                                             learner, obsWeights, seed), gcFirst=FALSE)
       return(list(fit=fit, fittime=fittime))
     }
@@ -243,15 +245,15 @@ subsemble <- function(x, y, newx = NULL, family = gaussian(),
     M <- ncol(Z)
     if (inherits(parallel, "cluster")) {
       #If the parallel object is a snow cluster
-      sublearners <- parSapply(cl=parallel, X=1:M, FUN=.fitWrapper, subCVsets=subCVsets, y=y, x=x, newx=newx,
+      sublearners <- parSapply(cl=parallel, X=1:M, FUN=.fitWrapper, subCVsets=subCVsets, y=y, xmat=x, newx=newx,
                                family=family, learner=learner, obsWeights=obsWeights, seed=seed, simplify=FALSE)    
     } else if (parallel=="multicore") {
-        cl <- makeCluster(detectCores(), type="FORK") 
-        sublearners <- parSapply(cl=cl, X=1:M, FUN=.fitWrapper, subCVsets=subCVsets, y=y, x=x, newx=newx,
+        cl <- makeCluster(min(ncores,M), type="FORK") 
+        sublearners <- parSapply(cl=cl, X=1:M, FUN=.fitWrapper, subCVsets=subCVsets, y=y, xmat=x, newx=newx,
                              family=family, learner=learner, obsWeights=obsWeights, seed=seed, simplify=FALSE)
         stopCluster(cl)
     } else {
-        sublearners <- sapply(X=1:M, FUN=.fitWrapper, subCVsets=subCVsets, y=y, x=x, newx=newx,
+        sublearners <- sapply(X=1:M, FUN=.fitWrapper, subCVsets=subCVsets, y=y, xmat=x, newx=newx,
                           family=family, learner=learner, obsWeights=obsWeights, seed=seed, simplify=FALSE)
     } 
     runtime$sublearning <- lapply(sublearners, function(ll) ll$fittime)

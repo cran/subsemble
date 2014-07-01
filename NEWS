@@ -28,6 +28,12 @@ To Do
 * Add support for screening algorithms in the `learner` list.
 
 
+subsemble 0.0.9 (2014-07-01)
+----------------
+* Re-named the argument `x` to `xmat` in `subsemble` internal functions `.cvFun` and `.fitWrapper` to avoid naming conflicts with parSapply functions.  This was a bug introduced by the previous argument name change from `X` to `x` in the `subsemble` function.
+* Reduced the number of cores in a multicore cluster to the length of the list that the parSapply function is applied to (or number of cores, if that is fewer).  Previously, the multicore cluster was unnecessarily created using the maximum number of cores available.
+
+
 subsemble 0.0.8 (2014-06-28)
 ----------------
 * Changed the `X, Y, newX` arguments of the `subsemble` function to `x, y, newx` in order to conform to more common ML algorthim conventions in R.  Additionally, the order of the first two arguments was changed from `(Y,X)` to `(x, y)` to match common convention.  Lastly, the `newdata` argument in the `predict.subsemble` function was changed to `newx`.  The `predict` function expects the new data.frame/matrix to have the same structure as the design matrix, `x`, hence it is more descriptive to name this argument `newx`.
