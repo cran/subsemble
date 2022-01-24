@@ -4,7 +4,7 @@
 An Ensemble Method for Combining Subset-Specific Algorithm Fits
 }
 \description{
-Subsemble partitions the full dataset into subsets of observations, fits a specified underlying algorithm on each subset, and uses a unique form of V-fold cross-validation to output a prediction function that combines the subset-specific fits.
+The Subsemble algorithm partitions the full dataset into subsets of observations, fits a specified underlying algorithm on each subset, and uses a unique form of k-fold cross-validation to output a prediction function that combines the subset-specific fits.
 }
 \usage{
 subsemble(x, y, newx = NULL, family = gaussian(), 
@@ -57,7 +57,7 @@ Optional observation weights vector. As with \code{id} above, \code{obsWeights} 
 A random seed to be set (integer); defaults to 1.  If \code{NULL}, then a random seed will not be set.
 }
   \item{parallel}{
-A character string specifying optional parallelization.  Use \code{"seq"} for sequential computation (the default).  Use \code{"multicore"} to perform the V-fold (internal) cross-validation step as well as the learning across subsets in parallel over all available cores.  Or \code{parallel} can be a snow cluster object.  Both parallel options use the built-in functionality of the core "parallel" package. 
+A character string specifying optional parallelization.  Use \code{"seq"} for sequential computation (the default).  Use \code{"multicore"} to perform the k-fold (internal) cross-validation step as well as the learning across subsets in parallel over all available cores.  Or \code{parallel} can be a snow cluster object.  Both parallel options use the built-in functionality of the core "parallel" package. 
 }
 }
 
@@ -79,7 +79,7 @@ A vector containing the predicted values from the subsemble for the rows in \cod
 The Z matrix (the cross-validated predicted values for each sublearner).
 }
 \item{cvRisk}{
-A numeric vector with the V-fold cross-validated risk estimate for each algorithm in learning library. Note that this does not contain the CV risk estimate for the Subsemble, only the individual models in the library.  (Not enabled yet, set to \code{NULL}.)
+A numeric vector with the k-fold cross-validated risk estimate for each algorithm in learning library. Note that this does not contain the CV risk estimate for the Subsemble, only the individual models in the library.  (Not enabled yet, set to \code{NULL}.)
 }
 \item{family}{
 Returns the \code{family} argument from above.  
@@ -112,41 +112,41 @@ An list of runtimes for various steps of the algorithm.  The list contains \code
 }
 
 \references{
-Stephanie Sapp, Mark J. van der Laan & John Canny, Journal of Applied Statistics (2013). Subsemble: An ensemble method for combining subset-specific algorithm fits\cr
-\url{http://www.tandfonline.com/doi/abs/10.1080/02664763.2013.864263}\cr
-\url{https://biostats.bepress.com/ucbbiostat/paper313}
+LeDell, E. (2015) Scalable Ensemble Learning and Computationally Efficient Variance Estimation (Doctoral Dissertation).  University of California, Berkeley, USA.\cr
+\url{https://github.com/ledell/phd-thesis/blob/main/ledell-phd-thesis.pdf}\cr
+\cr
+Stephanie Sapp, Mark J. van der Laan & John Canny. (2014) Subsemble: An ensemble method for combining subset-specific algorithm fits.  Journal of Applied Statistics, 41(6):1247-1259\cr
+\url{https://www.tandfonline.com/doi/abs/10.1080/02664763.2013.864263}\cr
+\url{https://biostats.bepress.com/ucbbiostat/paper313/}
 }
 \author{
-Erin LeDell  \email{ledell@berkeley.edu} 
+Erin LeDell  \email{oss@ledell.org} 
 }
-\note{
-Notice to users: The interface (function arguments/values) may be subject to change prior to version 1.0.0.
-}
-
 
 \seealso{
 \code{\link[SuperLearner:listWrappers]{listWrappers}}, \code{\link[SuperLearner:SuperLearner]{SuperLearner}}
 }
 \examples{
-\dontrun{
+\donttest{
 # Load some example data.
 
-library(cvAUC)
+library(subsemble)
+library(cvAUC)  # >= version 1.0.1
 data(admissions)
 
 # Training data.
-x <- subset(admissions, select=-c(Y))[1:400,]
+x <- subset(admissions, select = -c(Y))[1:400,]
 y <- admissions$Y[1:400]
 
 # Test data.
-newx <- subset(admissions, select=-c(Y))[401:500,]
+newx <- subset(admissions, select = -c(Y))[401:500,]
 newy <- admissions$Y[401:500]
 
 
 # Set up the Subsemble.
 
 learner <- c("SL.randomForest", "SL.glm")
-metalearner <- c("SL.glm")
+metalearner <- "SL.glm"
 subsets <- 2
 
 
@@ -154,21 +154,21 @@ subsets <- 2
 # With learnControl$multiType="crossprod" (the default), 
 # we ensemble 4 models (2 subsets x 2 learners).
 
-fit <- subsemble(x=x, y=y, newx=newx, family=binomial(), 
+fit <- subsemble(x = x, y = y, newx = newx, family = binomial(), 
                  learner = learner, metalearner = metalearner,
                  subsets = subsets)
 
 
 # Evaulate the model by calculating AUC on the test set.
 
-auc <- cvAUC(predictions=fit$pred, labels=newy)$cvAUC
+auc <- AUC(predictions = fit$pred, labels = newy)
 print(auc)  # Test set AUC is: 0.937
 
 
 # We can also use the predict method to generate predictions on new data afterwards.
 
 pred <- predict(fit, newx)
-auc <- cvAUC(predictions=pred$pred, labels=newy)$cvAUC
+auc <- AUC(predictions = pred$pred, labels = newy)
 print(auc)  # Test set AUC is: 0.937
 
 
@@ -176,12 +176,12 @@ print(auc)  # Test set AUC is: 0.937
 # With learnControl$multiType="divisor", 
 # we ensemble only 2 models (one for each subset).
 
-fit <- subsemble(x=x, y=y, newx=newx, family=binomial(), 
+fit <- subsemble(x = x, y = y, newx = newx, family = binomial(), 
                  learner = learner, metalearner = metalearner,
                  subsets = subsets,
-                 learnControl = list(multiType="divisor"))
+                 learnControl = list(multiType = "divisor"))
 
-auc <- cvAUC(predictions=fit$pred, labels=newy)$cvAUC
+auc <- AUC(predictions = fit$pred, labels = newy)
 print(auc)  # Test set AUC is: 0.922
 
 
@@ -190,14 +190,14 @@ print(auc)  # Test set AUC is: 0.922
 # for a total of 3 models in the ensemble.
 
 learner <- c("SL.randomForest")
-metalearner <- c("SL.glmnet")
+metalearner <- "SL.glmnet"
 subsets <- 3
 
-fit <- subsemble(x=x, y=y, newx=newx, family=binomial(),
+fit <- subsemble(x = x, y = y, newx = newx, family = binomial(),
                  learner = learner, metalearner = metalearner,
                  subsets = subsets)
                  
-auc <- cvAUC(predictions=fit$pred, labels=newy)$cvAUC
+auc <- AUC(predictions = fit$pred, labels = newy)
 print(auc)  # Test set AUC is: 0.925
 
 
@@ -206,15 +206,22 @@ print(auc)  # Test set AUC is: 0.925
 # This is equivalent to the Super Learner algorithm.
 
 learner <- c("SL.randomForest", "SL.glm")
-metalearner <- c("SL.glm")
+metalearner <- "SL.glm"
 subsets <- 1
 
-fit <- subsemble(x=x, y=y, newx=newx, family=binomial(), 
+fit <- subsemble(x = x, y = y, newx = newx, family = binomial(), 
                  learner = learner, metalearner = metalearner,
                  subsets = subsets)
                  
-auc <- cvAUC(predictions=fit$pred, labels=newY)$cvAUC
+auc <- AUC(predictions = fit$pred, labels = newy)
 print(auc)  # Test set AUC is: 0.935
+
+
+# Multicore subsemble via the "parallel" package.
+# To perform the cross-validation and training steps using all available cores, 
+# use the parallel = "multicore" option.
+
+# More examples and information at: https://github.com/ledell/subsemble
 }
 }
 \keyword{models}
